@@ -1,3 +1,5 @@
+# Manhattan's Tourist problem implementation, 4x4 grid
+
 import numpy as np
 
 # Generate random weights for the edges
