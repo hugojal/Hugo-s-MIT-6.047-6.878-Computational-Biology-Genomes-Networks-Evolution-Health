@@ -1,11 +1,14 @@
-# This is the implementation of the Needleman-Wunch algorithm after listening to the lecture by Manolis Kellis. Different penalizations for translocations vs transversions has been applied.
+# This is the implementation of the Needleman-Wunch algorithm after listening to the lecture by Manolis Kellis. Different penalties are applied for mutation types.
 
 import random
 import numpy as np
 import seaborn as sns
 import matplotlib.pylab as plt
 
-def nw(seq1, seq2, match_score=1, mismatch_penalty=-1, gap_penalty=-0.5):
+def nw(seq1, seq2, match_score=1, transition_penalty=-1, transversion_penalty=-2, gap_penalty=-0.5):
+    purines = ['A', 'G']
+    pyramidines = ['C', 'T']
+
     # Initialize matrix
     m, n = len(seq1), len(seq2)
     M = [[0 for _ in range(n + 1)] for _ in range(m + 1)]
@@ -16,10 +19,18 @@ def nw(seq1, seq2, match_score=1, mismatch_penalty=-1, gap_penalty=-0.5):
     for j in range(n + 1):
         M[0][j] = gap_penalty * j
 
+    def get_score(a, b):
+      if a==b:
+        return match_score
+      elif (a in purines and b in purines) or (a in pyramidines and b in pyramidines):
+        return transition_penalty
+      else:
+        return transversion_penalty
+
     # Fill the scoring matrix
     for i in range(1, m + 1):
         for j in range(1, n + 1):
-            match = M[i - 1][j - 1] + (match_score if seq1[i - 1] == seq2[j - 1] else mismatch_penalty)
+            match = M[i - 1][j - 1] + get_score(seq1[i-1], seq2[j-1])
             delete = M[i - 1][j] + gap_penalty
             insert = M[i][j - 1] + gap_penalty
             M[i][j] = max(match, delete, insert)
@@ -30,7 +41,7 @@ def nw(seq1, seq2, match_score=1, mismatch_penalty=-1, gap_penalty=-0.5):
     i, j = m, n
     while i > 0 or j > 0:
         path.append((i, j))
-        if i > 0 and j > 0 and M[i][j] == M[i - 1][j - 1] + (match_score if seq1[i - 1] == seq2[j - 1] else mismatch_penalty):
+        if i > 0 and j > 0 and M[i][j] == M[i - 1][j - 1] + get_score(seq1[i-1], seq2[j-1]):
             aligned_seq1 = seq1[i - 1] + aligned_seq1
             aligned_seq2 = seq2[j - 1] + aligned_seq2
             i -= 1
@@ -46,7 +57,6 @@ def nw(seq1, seq2, match_score=1, mismatch_penalty=-1, gap_penalty=-0.5):
     path.append((0, 0))  # Add the starting point
 
     return M, M[m][n], aligned_seq1, aligned_seq2, path
-
 
 # Usage
 nucleotides = ['A', 'C', 'G', 'T']
